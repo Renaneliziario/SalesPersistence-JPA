@@ -5,44 +5,38 @@ package br.com.renan.domain;
 
 import java.math.BigDecimal;
 
-import anotacao.ColunaTabela;
-import anotacao.Tabela;
-import anotacao.TipoChave;
-import br.com.renan.dao.Persistente;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 
 /**
 @author renan.eliziario
  *
  */
-@Tabela("TB_PRODUTO")
-public class Produto implements Persistente {
+@Entity
+@Table(name = "TB_PRODUTO")
+public class Produto {
 	
-	@ColunaTabela(dbName = "id", setJavaName = "setId")
+	@Id
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="produto_seq")
+	@SequenceGenerator(name="produto_seq", sequenceName="sq_produto", initialValue = 1, allocationSize = 1)
 	private Long id;
-
-	@TipoChave("getCodigo")
-	@ColunaTabela(dbName = "codigo", setJavaName = "setCodigo")
+	
+	@Column(name = "codigo", nullable = false, length = 10, unique = true)
 	private String codigo;
 	
-	@ColunaTabela(dbName = "nome", setJavaName = "setNome")
+	@Column(name = "nome", nullable = false, length = 50)
 	private String nome;
 	
-	@ColunaTabela(dbName = "descricao", setJavaName = "setDescricao")
+	@Column(name = "descricao", nullable = false, length = 70)
 	private String descricao;
 	
-	@ColunaTabela(dbName = "valor", setJavaName = "setValor")
+	@Column(name = "valor", nullable = false)
 	private BigDecimal valor;
-	
-	@ColunaTabela(dbName = "marca", setJavaName = "setMarca")
-	private String marca;
-
-	public String getMarca() {
-		return marca;
-	}
-
-	public void setMarca(String marca) {
-		this.marca = marca;
-	}
 
 	public String getCodigo() {
 		return codigo;

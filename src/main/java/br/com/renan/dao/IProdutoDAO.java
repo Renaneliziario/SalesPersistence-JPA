@@ -7,6 +7,6 @@ import br.com.renan.domain.Produto;
 @author renan.eliziario
  *
  */
-public interface IProdutoDAO extends IGenericDAO<Produto, String>{
+public interface IProdutoDAO extends IGenericDAO<Produto, Long>{
 
 }

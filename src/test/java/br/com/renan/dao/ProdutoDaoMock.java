@@ -1,12 +1,9 @@
-/**
- * 
- */
 package br.com.renan.dao;
 
 import java.util.Collection;
 
 import br.com.renan.domain.Produto;
-import br.com.renan.exceptions.TipoChaveNaoEncontradaException;
+import br.com.renan.exceptions.DAOException;
 
 /**
 @author renan.eliziario
@@ -15,33 +12,29 @@ import br.com.renan.exceptions.TipoChaveNaoEncontradaException;
 public class ProdutoDaoMock implements IProdutoDAO {
 
 	@Override
-	public Boolean cadastrar(Produto entity) throws TipoChaveNaoEncontradaException {
-		// TODO Auto-generated method stub
-		return true;
+	public Produto cadastrar(Produto entity) throws DAOException {
+		return entity;
 	}
 
 	@Override
-	public void excluir(String valor) {
-		// TODO Auto-generated method stub
+	public void excluir(Produto entity) throws DAOException {
 		
 	}
 
 	@Override
-	public void alterar(Produto entity) throws TipoChaveNaoEncontradaException {
-		// TODO Auto-generated method stub
-		
+	public Produto alterar(Produto entity) throws DAOException {
+		return entity;
 	}
 
 	@Override
-	public Produto consultar(String valor) {
+	public Produto consultar(Long id) throws DAOException {
 		Produto produto = new Produto();
-		produto.setCodigo(valor);
+		produto.setId(id);
 		return produto;
 	}
 
 	@Override
 	public Collection<Produto> buscarTodos() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

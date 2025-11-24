@@ -1,6 +1,3 @@
-/**
- * 
- */
 package br.com.renan;
 
 import org.junit.Assert;
@@ -11,7 +8,6 @@ import br.com.renan.dao.ClienteDaoMock;
 import br.com.renan.dao.IClienteDAO;
 import br.com.renan.domain.Cliente;
 import br.com.renan.exceptions.DAOException;
-import br.com.renan.exceptions.TipoChaveNaoEncontradaException;
 import br.com.renan.services.ClienteService;
 import br.com.renan.services.IClienteService;
 
@@ -50,22 +46,20 @@ public class ClienteServiceTest {
 	}
 	
 	@Test
-	public void salvarCliente() throws TipoChaveNaoEncontradaException, DAOException {
-		Boolean retorno = clienteService.cadastrar(cliente);
-		
-		Assert.assertTrue(retorno);
+	public void salvarCliente() throws DAOException {
+		Cliente retorno = clienteService.cadastrar(cliente);
+		Assert.assertNotNull(retorno);
 	}
 	
 	@Test
 	public void excluirCliente() throws DAOException {
-		clienteService.excluir(cliente.getCpf());
+		clienteService.excluir(cliente);
 	}
 	
 	@Test
-	public void alterarCliente() throws TipoChaveNaoEncontradaException, DAOException {
+	public void alterarCliente() throws DAOException {
 		cliente.setNome("Rodrigo Pires");
-		clienteService.alterar(cliente);
-		
-		Assert.assertEquals("Rodrigo Pires", cliente.getNome());
+		Cliente retorno = clienteService.alterar(cliente);
+		Assert.assertEquals("Rodrigo Pires", retorno.getNome());
 	}
 }

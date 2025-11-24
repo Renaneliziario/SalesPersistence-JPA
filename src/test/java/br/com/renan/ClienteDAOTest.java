@@ -1,23 +1,19 @@
-/**
- * 
- */
 package br.com.renan;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.Collection;
 
 import org.junit.After;
-import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import br.com.renan.dao.ClienteDAO;
 import br.com.renan.dao.IClienteDAO;
 import br.com.renan.domain.Cliente;
 import br.com.renan.exceptions.DAOException;
-import br.com.renan.exceptions.MaisDeUmRegistroException;
-import br.com.renan.exceptions.TableException;
-import br.com.renan.exceptions.TipoChaveNaoEncontradaException;
 
 /**
 @author renan.eliziario
@@ -27,16 +23,17 @@ public class ClienteDAOTest {
 	
 	private IClienteDAO clienteDao;
 
-	public ClienteDAOTest() {
-		clienteDao = new ClienteDAO();
+	@Before
+	public void setUp() {
+		clienteDao = new ClienteDAO("sistemaVendas-Test-PU");
 	}
 	
 	@After
-	public void end() throws DAOException {
+	public void tearDown() throws DAOException {
 		Collection<Cliente> list = clienteDao.buscarTodos();
 		list.forEach(cli -> {
 			try {
-				clienteDao.excluir(cli.getCpf());
+				clienteDao.excluir(cli);
 			} catch (DAOException e) {
 				e.printStackTrace();
 			}
@@ -44,7 +41,7 @@ public class ClienteDAOTest {
 	}
 	
 	@Test
-	public void pesquisarCliente() throws MaisDeUmRegistroException, TableException, TipoChaveNaoEncontradaException, DAOException {
+	public void pesquisarCliente() throws DAOException {
 		Cliente cliente = new Cliente();
 		cliente.setCpf(12312312312L);
 		cliente.setNome("Rodrigo");
@@ -53,18 +50,14 @@ public class ClienteDAOTest {
 		cliente.setEstado("SP");
 		cliente.setNumero(10);
 		cliente.setTel(1199999999L);
-		cliente.setProfissao("montador");
 		clienteDao.cadastrar(cliente);
 		
-		Cliente clienteConsultado = clienteDao.consultar(cliente.getCpf());
-		Assert.assertNotNull(clienteConsultado);
-		Assert.assertEquals("montador", clienteConsultado.getProfissao());
-		
-		clienteDao.excluir(cliente.getCpf());
+		Cliente clienteConsultado = clienteDao.buscarPorCPF(cliente.getCpf());
+		assertNotNull(clienteConsultado);
 	}
 	
 	@Test
-	public void salvarCliente() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void salvarCliente() throws DAOException {
 		Cliente cliente = new Cliente();
 		cliente.setCpf(56565656565L);
 		cliente.setNome("Rodrigo");
@@ -73,119 +66,78 @@ public class ClienteDAOTest {
 		cliente.setEstado("SP");
 		cliente.setNumero(10);
 		cliente.setTel(1199999999L);
-		cliente.setProfissao("montador");
-		Boolean retorno = clienteDao.cadastrar(cliente);
-		Assert.assertTrue(retorno);
+		Cliente retorno = clienteDao.cadastrar(cliente);
+		assertNotNull(retorno);
 		
-		Cliente clienteConsultado = clienteDao.consultar(cliente.getCpf());
-		Assert.assertNotNull(clienteConsultado);
-		Assert.assertEquals("montador", clienteConsultado.getProfissao());
-		
-		clienteDao.excluir(cliente.getCpf());
+		Cliente clienteConsultado = clienteDao.buscarPorCPF(retorno.getCpf());
+		assertNotNull(clienteConsultado);
 	}
 	
 	
 	@Test
-	public void excluirCliente() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void excluirCliente() throws DAOException {
 		Cliente cliente = new Cliente();
-		cliente.setCpf(56565656565L);
+		cliente.setCpf(10203040506L);
 		cliente.setNome("Rodrigo");
 		cliente.setCidade("São Paulo");
 		cliente.setEnd("End");
 		cliente.setEstado("SP");
 		cliente.setNumero(10);
 		cliente.setTel(1199999999L);
-		cliente.setProfissao("montador");
-		Boolean retorno = clienteDao.cadastrar(cliente);
-		Assert.assertTrue(retorno);
+		Cliente retorno = clienteDao.cadastrar(cliente);
+		assertNotNull(retorno);
 		
-		Cliente clienteConsultado = clienteDao.consultar(cliente.getCpf());
-		Assert.assertNotNull(clienteConsultado);
-		Assert.assertEquals("montador", clienteConsultado.getProfissao());
+		clienteDao.excluir(retorno);
 		
-		clienteDao.excluir(cliente.getCpf());
-		clienteConsultado = clienteDao.consultar(cliente.getCpf());
-		Assert.assertNull(clienteConsultado);
+		Cliente clienteConsultado = clienteDao.buscarPorCPF(retorno.getCpf());
+		assertNull(clienteConsultado);
 	}
 	
 	@Test
-	public void alterarCliente() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void alterarCliente() throws DAOException {
 		Cliente cliente = new Cliente();
-		cliente.setCpf(56565656565L);
+		cliente.setCpf(70809010011L);
 		cliente.setNome("Rodrigo");
 		cliente.setCidade("São Paulo");
 		cliente.setEnd("End");
 		cliente.setEstado("SP");
 		cliente.setNumero(10);
 		cliente.setTel(1199999999L);
-		cliente.setProfissao("montador");
-		Boolean retorno = clienteDao.cadastrar(cliente);
-		Assert.assertTrue(retorno);
+		Cliente retorno = clienteDao.cadastrar(cliente);
+		assertNotNull(retorno);
 		
-		Cliente clienteConsultado = clienteDao.consultar(cliente.getCpf());
-		Assert.assertNotNull(clienteConsultado);
-		Assert.assertEquals("montador", clienteConsultado.getProfissao());
+		retorno.setNome("Rodrigo Pires");
+		clienteDao.alterar(retorno);
 		
-		clienteConsultado.setNome("Rodrigo Pires");
-		clienteConsultado.setProfissao("engenheiro");
-		clienteDao.alterar(clienteConsultado);
-		
-		Cliente clienteAlterado = clienteDao.consultar(clienteConsultado.getCpf());
-		Assert.assertNotNull(clienteAlterado);
-		Assert.assertEquals("Rodrigo Pires", clienteAlterado.getNome());
-		Assert.assertEquals("engenheiro", clienteAlterado.getProfissao());
-		
-		clienteDao.excluir(cliente.getCpf());
-		clienteConsultado = clienteDao.consultar(cliente.getCpf());
-		Assert.assertNull(clienteConsultado);
+		Cliente clienteAlterado = clienteDao.buscarPorCPF(retorno.getCpf());
+		assertNotNull(clienteAlterado);
+		assertEquals("Rodrigo Pires", clienteAlterado.getNome());
 	}
 	
 	@Test
-	public void buscarTodos() throws TipoChaveNaoEncontradaException, DAOException {
+	public void buscarTodos() throws DAOException {
 		Cliente cliente = new Cliente();
-		cliente.setCpf(56565656565L);
+		cliente.setCpf(22334455667L);
 		cliente.setNome("Rodrigo");
 		cliente.setCidade("São Paulo");
 		cliente.setEnd("End");
 		cliente.setEstado("SP");
 		cliente.setNumero(10);
 		cliente.setTel(1199999999L);
-		cliente.setProfissao("montador");
-		Boolean retorno = clienteDao.cadastrar(cliente);
-		Assert.assertTrue(retorno);
+		clienteDao.cadastrar(cliente);
 		
 		Cliente cliente1 = new Cliente();
-		cliente1.setCpf(56565656569L);
-		cliente1.setNome("Rodrigo");
+		cliente1.setCpf(88990011223L);
+		cliente1.setNome("Renan");
 		cliente1.setCidade("São Paulo");
 		cliente1.setEnd("End");
 		cliente1.setEstado("SP");
 		cliente1.setNumero(10);
 		cliente1.setTel(1199999999L);
-		cliente1.setProfissao("engenheiro");
-		Boolean retorno1 = clienteDao.cadastrar(cliente1);
-		Assert.assertTrue(retorno1);
+		clienteDao.cadastrar(cliente1);
 		
 		Collection<Cliente> list = clienteDao.buscarTodos();
-		assertTrue(list != null);
-		assertTrue(list.size() == 2);
-		
-		boolean encontrouMontador = false;
-		boolean encontrouEngenheiro = false;
-		for (Cliente cli : list) {
-			if ("montador".equals(cli.getProfissao())) encontrouMontador = true;
-			if ("engenheiro".equals(cli.getProfissao())) encontrouEngenheiro = true;
-			try {
-				clienteDao.excluir(cli.getCpf());
-			} catch (DAOException e) {
-				e.printStackTrace();
-			}
-		}
-		Assert.assertTrue(encontrouMontador);
-		Assert.assertTrue(encontrouEngenheiro);
-		
-		Collection<Cliente> list1 = clienteDao.buscarTodos();
-		assertTrue(list1 != null);
-		assertTrue(list1.size() == 0);
+		assertNotNull(list);
+		assertEquals(2, list.size());
 	}
 }

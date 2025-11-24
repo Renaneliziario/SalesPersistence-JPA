@@ -1,285 +1,65 @@
-/**
- * 
- */
 package br.com.renan.dao;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import javax.persistence.NoResultException;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Root;
 
-import br.com.renan.dao.factory.ProdutoQuantidadeFactory;
-import br.com.renan.dao.factory.VendaFactory;
 import br.com.renan.dao.generic.GenericDAO;
-import br.com.renan.domain.ProdutoQuantidade;
 import br.com.renan.domain.Venda;
 import br.com.renan.domain.Venda.Status;
 import br.com.renan.exceptions.DAOException;
-import br.com.renan.exceptions.MaisDeUmRegistroException;
-import br.com.renan.exceptions.TableException;
-import br.com.renan.exceptions.TipoChaveNaoEncontradaException;
 
 /**
 @author renan.eliziario
  *
  */
-public class VendaDAO extends GenericDAO<Venda, String> implements IVendaDAO {	
+public class VendaDAO extends GenericDAO<Venda, Long> implements IVendaDAO {
 
 	public VendaDAO() {
-		super();
-	}
-
-	@Override
-	public Class<Venda> getTipoClasse() {
-		return Venda.class;
-	}
-
-	@Override
-	public void atualizarDados(Venda entity, Venda entityCadastrado) {
-		entityCadastrado.setCodigo(entity.getCodigo());
-		entityCadastrado.setStatus(entity.getStatus());
-	}
-
-	@Override
-	public void excluir(String valor) {
-		throw new UnsupportedOperationException("OPERAÇÃO NÃO PERMITIDA");
-	}
-
-	@Override
-	public void finalizarVenda(Venda venda) throws TipoChaveNaoEncontradaException, DAOException {
-		
-		Connection connection = null;
-    	PreparedStatement stm = null;
-    	try {
-    		String sql = "UPDATE TB_VENDA SET STATUS_VENDA = ? WHERE ID = ?";
-    		connection = getConnection();
-			stm = connection.prepareStatement(sql);
-			stm.setString(1, Status.CONCLUIDA.name());
-			stm.setLong(2, venda.getId());
-			stm.executeUpdate();
-			
-		} catch (SQLException e) {
-			throw new DAOException("ERRO ATUALIZANDO OBJETO ", e);
-		} finally {
-			closeConnection(connection, stm, null);
-		}
+		super(Venda.class);
 	}
 	
-	@Override
-	public void cancelarVenda(Venda venda) throws TipoChaveNaoEncontradaException, DAOException {
-		Connection connection = null;
-    	PreparedStatement stm = null;
-    	try {
-    		String sql = "UPDATE TB_VENDA SET STATUS_VENDA = ? WHERE ID = ?";
-    		connection = getConnection();
-			stm = connection.prepareStatement(sql);
-			stm.setString(1, Status.CANCELADA.name());
-			stm.setLong(2, venda.getId());
-			stm.executeUpdate();
-			
-		} catch (SQLException e) {
-			throw new DAOException("ERRO ATUALIZANDO OBJETO ", e);
-		} finally {
-			closeConnection(connection, stm, null);
-		}
+	public VendaDAO(String persistenceUnitName) {
+		super(Venda.class, persistenceUnitName);
 	}
 
 	@Override
-	protected String getQueryInsercao() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("INSERT INTO TB_VENDA ");
-		sb.append("(ID, CODIGO, ID_CLIENTE_FK, VALOR_TOTAL, DATA_VENDA, STATUS_VENDA)");
-		sb.append("VALUES (nextval('sq_venda'),?,?,?,?,?)");
-		return sb.toString();
+	public void finalizarVenda(Venda venda) throws DAOException {
+		venda.setStatus(Status.CONCLUIDA);
+		alterar(venda);
 	}
 
 	@Override
-	protected void setParametrosQueryInsercao(PreparedStatement stmInsert, Venda entity) throws SQLException {
-		stmInsert.setString(1, entity.getCodigo());
-		stmInsert.setLong(2, entity.getCliente().getId());
-		stmInsert.setBigDecimal(3, entity.getValorTotal());
-		stmInsert.setTimestamp(4, Timestamp.from(entity.getDataVenda()));
-		stmInsert.setString(5, entity.getStatus().name());
+	public void cancelarVenda(Venda venda) throws DAOException {
+		venda.setStatus(Status.CANCELADA);
+		alterar(venda);
 	}
 
 	@Override
-	protected String getQueryExclusao() {
-		throw new UnsupportedOperationException("OPERAÇÃO NÃO PERMITIDA");
+	public Venda cadastrar(Venda entity) throws DAOException {
+		entity.getProdutos().forEach(prod -> prod.setVenda(entity));
+		return super.cadastrar(entity);
 	}
 
 	@Override
-	protected void setParametrosQueryExclusao(PreparedStatement stmInsert, String valor) throws SQLException {
-		throw new UnsupportedOperationException("OPERAÇÃO NÃO PERMITIDA");
-	}
-
-	@Override
-	protected String getQueryAtualizacao() {
-		throw new UnsupportedOperationException("OPERAÇÃO NÃO PERMITIDA");
-	}
-
-	@Override
-	protected void setParametrosQueryAtualizacao(PreparedStatement stmUpdate, Venda entity) throws SQLException {
-		throw new UnsupportedOperationException("OPERAÇÃO NÃO PERMITIDA");
-	}
-
-	@Override
-	protected void setParametrosQuerySelect(PreparedStatement stm, String valor) throws SQLException {
-		stm.setString(1, valor);
-	}
-	
-	
-
-	@Override
-	public Venda consultar(String valor) throws MaisDeUmRegistroException, TableException, DAOException {
-		//TODO pode ser feito desta forma
-//		Venda venda = super.consultar(valor);
-//		Cliente cliente = clienteDAO.consultar(venda.getCliente().getId());
-//		venda.setCliente(cliente);
-//		return venda;
-		
-		//TODO Ou pode ser feito com join
-		StringBuilder sb = sqlBaseSelect();
-		sb.append("WHERE V.CODIGO = ? ");
-		Connection connection = null;
-		PreparedStatement stm = null;
-		ResultSet rs = null;
+	public Venda consultar(Long id) throws DAOException {
 		try {
-    		//validarMaisDeUmRegistro();
-    		connection = getConnection();
-			stm = connection.prepareStatement(sb.toString());
-			setParametrosQuerySelect(stm, valor);
-			rs = stm.executeQuery();
-		    if (rs.next()) {
-		    	Venda venda = VendaFactory.convert(rs);
-		    	buscarAssociacaoVendaProdutos(connection, venda);
-		    	return venda;
-		    }
-		    
-		} catch (SQLException e) {
-			throw new DAOException("ERRO CONSULTANDO OBJETO ", e);
-		} finally {
-			closeConnection(connection, stm, rs);
-		}
-    	return null;
-		
-	}
-
-	private void buscarAssociacaoVendaProdutos(Connection connection, Venda venda)
-			throws DAOException {
-		PreparedStatement stmProd = null;
-		ResultSet rsProd = null;
-		try {
-			StringBuilder sbProd = new StringBuilder();
-		    sbProd.append("SELECT PQ.ID, PQ.QUANTIDADE, PQ.VALOR_TOTAL, ");
-		    sbProd.append("P.ID AS ID_PRODUTO, P.CODIGO, P.NOME, P.DESCRICAO, P.VALOR ");
-		    sbProd.append("FROM TB_PRODUTO_QUANTIDADE PQ ");
-		    sbProd.append("INNER JOIN TB_PRODUTO P ON P.ID = PQ.ID_PRODUTO_FK ");
-		    sbProd.append("WHERE PQ.ID_VENDA_FK = ?");
-		    stmProd = connection.prepareStatement(sbProd.toString());
-		    stmProd.setLong(1, venda.getId());
-		    rsProd = stmProd.executeQuery();
-		    Set<ProdutoQuantidade> produtos = new HashSet<>();
-		    while(rsProd.next()) {
-		    	ProdutoQuantidade prodQ = ProdutoQuantidadeFactory.convert(rsProd);
-		    	produtos.add(prodQ);
-		    }
-		    venda.setProdutos(produtos);
-		    venda.recalcularValorTotalVenda();
-		} catch (SQLException e) {
-			throw new DAOException("ERRO CONSULTANDO OBJETO ", e);
-		} finally {
-			closeConnection(connection, stmProd, rsProd);
+			CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+			CriteriaQuery<Venda> query = builder.createQuery(Venda.class);
+			Root<Venda> root = query.from(Venda.class);
+			root.fetch("cliente", JoinType.LEFT);
+			root.fetch("produtos", JoinType.LEFT);
+			query.select(root).where(builder.equal(root.get("id"), id));
+			TypedQuery<Venda> tpQuery = 
+					entityManager.createQuery(query);
+			Venda venda = tpQuery.getSingleResult(); 
+			venda.recalcularValorTotalVenda();
+			return venda;
+		} catch (NoResultException e) {
+			return null;
 		}
 	}
-	
-	
-
-	@Override
-	public Collection<Venda> buscarTodos() throws DAOException {
-		List<Venda> lista = new ArrayList<>();
-		StringBuilder sb = sqlBaseSelect();
-		
-		try {
-    		Connection connection = getConnection();
-			PreparedStatement stm = connection.prepareStatement(sb.toString());
-			ResultSet rs = stm.executeQuery();
-		    while (rs.next()) {
-		    	Venda venda = VendaFactory.convert(rs);
-		    	buscarAssociacaoVendaProdutos(connection, venda);
-		    	lista.add(venda);
-		    }
-		    
-		} catch (SQLException e) {
-			throw new DAOException("ERRO CONSULTANDO OBJETO ", e);
-		} 
-    	return lista;
-	}
-
-	private StringBuilder sqlBaseSelect() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("SELECT V.ID AS ID_VENDA, V.CODIGO, V.VALOR_TOTAL, V.DATA_VENDA, V.STATUS_VENDA, ");
-		sb.append("C.ID AS ID_CLIENTE, C.NOME, C.CPF, C.TEL, C.ENDERECO, C.NUMERO, C.CIDADE, C.ESTADO ");
-		sb.append("FROM TB_VENDA V ");
-		sb.append("INNER JOIN TB_CLIENTE C ON V.ID_CLIENTE_FK = C.ID ");
-		return sb;
-	}
-
-	@Override
-	public Boolean cadastrar(Venda entity) throws TipoChaveNaoEncontradaException, DAOException {
-		Connection connection = null;
-    	PreparedStatement stm = null;
-    	try {
-    		connection = getConnection();
-			stm = connection.prepareStatement(getQueryInsercao(), Statement.RETURN_GENERATED_KEYS);
-			setParametrosQueryInsercao(stm, entity);
-			int rowsAffected = stm.executeUpdate();
-
-			if(rowsAffected > 0) {
-				try (ResultSet rs = stm.getGeneratedKeys()){
-					if (rs.next()) {
-						entity.setId(rs.getLong(1));
-					}
-				}
-				
-				for (ProdutoQuantidade prod : entity.getProdutos()) {
-					stm = connection.prepareStatement(getQueryInsercaoProdQuant());
-					setParametrosQueryInsercaoProdQuant(stm, entity, prod);
-					rowsAffected = stm.executeUpdate();				
-
-				}				
-				
-				return true;
-			}
-			
-		} catch (SQLException e) {
-			throw new DAOException("ERRO CADASTRANDO OBJETO ", e);
-		} finally {
-			closeConnection(connection, stm, null);
-		}
-		return false;
-	}
-
-	private String getQueryInsercaoProdQuant() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("INSERT INTO TB_PRODUTO_QUANTIDADE ");
-		sb.append("(ID, ID_PRODUTO_FK, ID_VENDA_FK, QUANTIDADE, VALOR_TOTAL)");
-		sb.append("VALUES (nextval('sq_produto_quantidade'),?,?,?,?)");
-		return sb.toString();
-	}
-	
-	private void setParametrosQueryInsercaoProdQuant(PreparedStatement stm, Venda venda, ProdutoQuantidade prod) throws SQLException {
-		// Corrigido: ordem dos parâmetros conforme a query
-		stm.setLong(1, prod.getProduto().getId());
-		stm.setLong(2, venda.getId());
-		stm.setInt(3, prod.getQuantidade());
-		stm.setBigDecimal(4, prod.getValorTotal());
-	}
-
 }

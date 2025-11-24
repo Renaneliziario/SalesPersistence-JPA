@@ -3,52 +3,50 @@
  */
 package br.com.renan.domain;
 
-import anotacao.ColunaTabela;
-import anotacao.Tabela;
-import anotacao.TipoChave;
-import br.com.renan.dao.Persistente;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
 
 /**
 @author renan.eliziario
  *
  */
-@Tabela("TB_CLIENTE")
-public class Cliente implements Persistente {
+@Entity
+@Table(name = "TB_CLIENTE")
+public class Cliente {
 	
-	@ColunaTabela(dbName = "id", setJavaName = "setId")
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="cliente_seq")
+	@SequenceGenerator(name="cliente_seq", sequenceName="sq_cliente", initialValue = 1, allocationSize = 1)
 	private Long id;
 	
-	@ColunaTabela(dbName = "nome", setJavaName = "setNome")
+	@Column(name = "nome", nullable = false, length = 50)
 	private String nome;
 	
-	@TipoChave("getCpf")
-	@ColunaTabela(dbName = "cpf", setJavaName = "setCpf")
+	@Column(name = "cpf", nullable = false, unique = true)
     private Long cpf;
     
-	@ColunaTabela(dbName = "tel", setJavaName = "setTel")
+	@Column(name = "tel", nullable = false)
     private Long tel;
     
-	@ColunaTabela(dbName = "endereco", setJavaName = "setEnd")
+	@Column(name = "endereco", nullable = false, length = 100)
     private String end;
     
-	@ColunaTabela(dbName = "numero", setJavaName = "setNumero")
+	@Column(name = "numero", nullable = false)
     private Integer numero;
     
-	@ColunaTabela(dbName = "cidade", setJavaName = "setCidade")
+	@Column(name = "cidade", nullable = false, length = 50)
     private String cidade;
     
-	@ColunaTabela(dbName = "estado", setJavaName = "setEstado")
+	@Column(name = "estado", nullable = false, length = 2)
     private String estado;
 	
-	@ColunaTabela(dbName = "profissao", setJavaName = "setProfissao")
-	private String profissao;
-    
-	public String getProfissao() {
-		return profissao;
-	}
-	public void setProfissao(String profissao) {
-		this.profissao = profissao;
-	}
 	public String getNome() {
 		return nome;
 	}
@@ -97,9 +95,5 @@ public class Cliente implements Persistente {
 	public void setId(Long id) {
 		this.id = id;
 	}
-	
-	
-
-	
 
 }

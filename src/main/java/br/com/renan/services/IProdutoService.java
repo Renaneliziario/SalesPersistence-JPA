@@ -10,6 +10,6 @@ import br.com.renan.services.generic.IGenericService;
 @author renan.eliziario
  *
  */
-public interface IProdutoService extends IGenericService<Produto, String> {
+public interface IProdutoService extends IGenericService<Produto, Long> {
 
 }

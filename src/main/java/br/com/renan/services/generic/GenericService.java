@@ -6,18 +6,14 @@ package br.com.renan.services.generic;
 import java.io.Serializable;
 import java.util.Collection;
 
-import br.com.renan.dao.Persistente;
 import br.com.renan.dao.generic.IGenericDAO;
 import br.com.renan.exceptions.DAOException;
-import br.com.renan.exceptions.MaisDeUmRegistroException;
-import br.com.renan.exceptions.TableException;
-import br.com.renan.exceptions.TipoChaveNaoEncontradaException;
 
 /**
 @author renan.eliziario
  *
  */
-public abstract class GenericService<T extends Persistente, E extends Serializable> 
+public abstract class GenericService<T, E extends Serializable> 
 	implements IGenericService<T, E> {
 	
 	protected IGenericDAO<T,E> dao;
@@ -27,24 +23,24 @@ public abstract class GenericService<T extends Persistente, E extends Serializab
 	}
 
 	@Override
-	public Boolean cadastrar(T entity) throws TipoChaveNaoEncontradaException, DAOException {
+	public T cadastrar(T entity) throws DAOException {
 		return this.dao.cadastrar(entity);
 	}
 
 	@Override
-	public void excluir(E valor) throws DAOException {
-		this.dao.excluir(valor);
+	public void excluir(T entity) throws DAOException {
+		this.dao.excluir(entity);
 	}
 
 	@Override
-	public void alterar(T entity) throws TipoChaveNaoEncontradaException, DAOException {
-		this.dao.alterar(entity);
+	public T alterar(T entity) throws DAOException {
+		return this.dao.alterar(entity);
 	}
 
 	@Override
-	public T consultar(E valor) throws DAOException {
+	public T consultar(E id) throws DAOException {
 		try {
-			return this.dao.consultar(valor);
+			return this.dao.consultar(id);
 		} catch (Exception e) {
 			throw new DAOException("ERRO CONSULTANDO OBJETO ", e);
 		}

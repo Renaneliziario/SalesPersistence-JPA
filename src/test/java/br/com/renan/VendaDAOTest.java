@@ -2,18 +2,15 @@
 package br.com.renan;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Collection;
+
+import javax.persistence.PersistenceException;
 
 import org.junit.After;
 import org.junit.Before;
@@ -25,20 +22,13 @@ import br.com.renan.dao.IProdutoDAO;
 import br.com.renan.dao.IVendaDAO;
 import br.com.renan.dao.ProdutoDAO;
 import br.com.renan.dao.VendaDAO;
-import br.com.renan.dao.generic.jdbc.ConnectionFactory;
 import br.com.renan.domain.Cliente;
 import br.com.renan.domain.Produto;
 import br.com.renan.domain.Venda;
 import br.com.renan.domain.Venda.Status;
 import br.com.renan.exceptions.DAOException;
-import br.com.renan.exceptions.MaisDeUmRegistroException;
-import br.com.renan.exceptions.TableException;
 import br.com.renan.exceptions.TipoChaveNaoEncontradaException;
 
-/**
- * @author rodrigo.pires
- *
- */
 public class VendaDAOTest {
 	
 	private IVendaDAO vendaDao;
@@ -52,13 +42,13 @@ public class VendaDAOTest {
 	private Produto produto;
 	
 	public VendaDAOTest() {
-		vendaDao = new VendaDAO();
-		clienteDao = new ClienteDAO();
-		produtoDao = new ProdutoDAO();
+		vendaDao = new VendaDAO("sistemaVendas-Test-PU");
+		clienteDao = new ClienteDAO("sistemaVendas-Test-PU");
+		produtoDao = new ProdutoDAO("sistemaVendas-Test-PU");
 	}
 	
 	@Before
-	public void init() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void init() throws TipoChaveNaoEncontradaException, DAOException {
 		this.cliente = cadastrarCliente();
 		this.produto = cadastrarProduto("A1", BigDecimal.TEN);
 	}
@@ -67,82 +57,89 @@ public class VendaDAOTest {
 	public void end() throws DAOException {
 		excluirVendas();
 		excluirProdutos();
-		clienteDao.excluir(this.cliente.getCpf());
+		clienteDao.excluir(this.cliente);
 	}
 	
 
 	private void excluirProdutos() throws DAOException {
 		Collection<Produto> list = this.produtoDao.buscarTodos();
 		for (Produto prod : list) {
-			this.produtoDao.excluir(prod.getCodigo());
+			this.produtoDao.excluir(prod);
 		}
 	}
 
 	@Test
-	public void pesquisar() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void pesquisar() throws TipoChaveNaoEncontradaException, DAOException {
 		Venda venda = criarVenda("A1");
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
-		Venda vendaConsultada = vendaDao.consultar(venda.getCodigo());
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		assertNotNull(vendaConsultada);
 		assertEquals(venda.getCodigo(), vendaConsultada.getCodigo());
 	}
 	
 	@Test
-	public void salvar() throws TipoChaveNaoEncontradaException, DAOException, MaisDeUmRegistroException, TableException {
+	public void salvar() throws TipoChaveNaoEncontradaException, DAOException {
 		Venda venda = criarVenda("A2");
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		
-		assertTrue(venda.getValorTotal().equals(BigDecimal.valueOf(20)));
-		assertTrue(venda.getStatus().equals(Status.INICIADA));
+		assertTrue(venda.getValorTotal().compareTo(BigDecimal.valueOf(20)) == 0);
+		assertEquals(Status.INICIADA, venda.getStatus());
 		
-		Venda vendaConsultada = vendaDao.consultar(venda.getCodigo());
-		assertTrue(vendaConsultada.getId() != null);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
+		assertNotNull(vendaConsultada.getId());
 		assertEquals(venda.getCodigo(), vendaConsultada.getCodigo());
 	} 
 	
 	
 	@Test
-	public void cancelarVenda() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void cancelarVenda() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A3";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
 		vendaDao.cancelarVenda(venda);
 		
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		assertEquals(codigoVenda, vendaConsultada.getCodigo());
 		assertEquals(Status.CANCELADA, vendaConsultada.getStatus());
 	}
 	
 	@Test
-	public void adicionarMaisProdutosDoMesmo() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void adicionarMaisProdutosDoMesmo() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A4";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		vendaConsultada.adicionarProduto(produto, 1);
 		
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 3);
+		assertEquals(3, (int) vendaConsultada.getQuantidadeTotalProdutos());
 		BigDecimal valorTotal = BigDecimal.valueOf(30).setScale(2, RoundingMode.HALF_DOWN);
-		assertTrue(vendaConsultada.getValorTotal().equals(valorTotal));
-		assertTrue(vendaConsultada.getStatus().equals(Status.INICIADA));
+		assertTrue(valorTotal.compareTo(vendaConsultada.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada.getStatus());
+		
+		vendaDao.alterar(vendaConsultada);
+		
+		Venda vendaConsultada2 = vendaDao.consultar(venda.getId());
+		assertEquals(3, (int) vendaConsultada2.getQuantidadeTotalProdutos());
+		assertTrue(valorTotal.compareTo(vendaConsultada2.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada2.getStatus());
 	} 
 	
 	@Test
-	public void adicionarMaisProdutosDiferentes() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void adicionarMaisProdutosDiferentes() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A5";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
@@ -150,32 +147,40 @@ public class VendaDAOTest {
 		assertNotNull(prod);
 		assertEquals(codigoVenda, prod.getCodigo());
 		
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		vendaConsultada.adicionarProduto(prod, 1);
 		
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 3);
+		assertEquals(3, (int) vendaConsultada.getQuantidadeTotalProdutos());
 		BigDecimal valorTotal = BigDecimal.valueOf(70).setScale(2, RoundingMode.HALF_DOWN);
-		assertTrue(vendaConsultada.getValorTotal().equals(valorTotal));
-		assertTrue(vendaConsultada.getStatus().equals(Status.INICIADA));
+		assertTrue(valorTotal.compareTo(vendaConsultada.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada.getStatus());
+		
+		vendaDao.alterar(vendaConsultada);
+		
+		Venda vendaConsultada2 = vendaDao.consultar(venda.getId());
+		assertEquals(3, (int) vendaConsultada2.getQuantidadeTotalProdutos());
+		assertTrue(valorTotal.compareTo(vendaConsultada2.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada2.getStatus());
 	} 
 	
-	@Test(expected = DAOException.class)
+	@Test(expected = PersistenceException.class)
 	public void salvarVendaMesmoCodigoExistente() throws TipoChaveNaoEncontradaException, DAOException {
 		Venda venda = criarVenda("A6");
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 	
-		Boolean retorno1 = vendaDao.cadastrar(venda);
-		assertFalse(retorno1);
-		assertTrue(venda.getStatus().equals(Status.INICIADA));
+		Venda venda2 = criarVenda("A6");
+		Venda retorno1 = vendaDao.cadastrar(venda2);
+		assertNotNull(retorno1);
+		assertEquals(Status.INICIADA, venda.getStatus());
 	} 
 	
 	@Test
-	public void removerProduto() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void removerProduto() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A7";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
@@ -183,26 +188,33 @@ public class VendaDAOTest {
 		assertNotNull(prod);
 		assertEquals(codigoVenda, prod.getCodigo());
 		
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		vendaConsultada.adicionarProduto(prod, 1);
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 3);
+		assertEquals(3, (int) vendaConsultada.getQuantidadeTotalProdutos());
 		BigDecimal valorTotal = BigDecimal.valueOf(70).setScale(2, RoundingMode.HALF_DOWN);
-		assertTrue(vendaConsultada.getValorTotal().equals(valorTotal));
+		assertTrue(valorTotal.compareTo(vendaConsultada.getValorTotal()) == 0);
 		
 		
 		vendaConsultada.removerProduto(prod, 1);
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 2);
+		assertEquals(2, (int) vendaConsultada.getQuantidadeTotalProdutos());
 		valorTotal = BigDecimal.valueOf(20).setScale(2, RoundingMode.HALF_DOWN);
-		assertTrue(vendaConsultada.getValorTotal().equals(valorTotal));
-		assertTrue(vendaConsultada.getStatus().equals(Status.INICIADA));
+		assertTrue(valorTotal.compareTo(vendaConsultada.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada.getStatus());
+		
+		vendaDao.alterar(vendaConsultada);
+		
+		Venda vendaConsultada2 = vendaDao.consultar(venda.getId());
+		assertEquals(2, (int) vendaConsultada2.getQuantidadeTotalProdutos());
+		assertTrue(valorTotal.compareTo(vendaConsultada2.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada2.getStatus());
 	} 
 	
 	@Test
-	public void removerApenasUmProduto() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void removerApenasUmProduto() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A8";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
@@ -210,26 +222,33 @@ public class VendaDAOTest {
 		assertNotNull(prod);
 		assertEquals(codigoVenda, prod.getCodigo());
 		
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		vendaConsultada.adicionarProduto(prod, 1);
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 3);
+		assertEquals(3, (int) vendaConsultada.getQuantidadeTotalProdutos());
 		BigDecimal valorTotal = BigDecimal.valueOf(70).setScale(2, RoundingMode.HALF_DOWN);
-		assertTrue(vendaConsultada.getValorTotal().equals(valorTotal));
+		assertTrue(valorTotal.compareTo(vendaConsultada.getValorTotal()) == 0);
 		
 		
 		vendaConsultada.removerProduto(prod, 1);
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 2);
+		assertEquals(2, (int) vendaConsultada.getQuantidadeTotalProdutos());
 		valorTotal = BigDecimal.valueOf(20).setScale(2, RoundingMode.HALF_DOWN);
-		assertTrue(vendaConsultada.getValorTotal().equals(valorTotal));
-		assertTrue(vendaConsultada.getStatus().equals(Status.INICIADA));
+		assertTrue(valorTotal.compareTo(vendaConsultada.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada.getStatus());
+		
+		vendaDao.alterar(vendaConsultada);
+		
+		Venda vendaConsultada2 = vendaDao.consultar(venda.getId());
+		assertEquals(2, (int) vendaConsultada2.getQuantidadeTotalProdutos());
+		assertTrue(valorTotal.compareTo(vendaConsultada2.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada2.getStatus());
 	} 
 	
 	@Test
-	public void removerTodosProdutos() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void removerTodosProdutos() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A9";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
@@ -237,46 +256,53 @@ public class VendaDAOTest {
 		assertNotNull(prod);
 		assertEquals(codigoVenda, prod.getCodigo());
 		
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		vendaConsultada.adicionarProduto(prod, 1);
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 3);
+		assertEquals(3, (int) vendaConsultada.getQuantidadeTotalProdutos());
 		BigDecimal valorTotal = BigDecimal.valueOf(70).setScale(2, RoundingMode.HALF_DOWN);
-		assertTrue(vendaConsultada.getValorTotal().equals(valorTotal));
+		assertTrue(valorTotal.compareTo(vendaConsultada.getValorTotal()) == 0);
 		
 		
 		vendaConsultada.removerTodosProdutos();
-		assertTrue(vendaConsultada.getQuantidadeTotalProdutos() == 0);
-		assertTrue(vendaConsultada.getValorTotal().equals(BigDecimal.valueOf(0)));
-		assertTrue(vendaConsultada.getStatus().equals(Status.INICIADA));
+		assertEquals(0, (int) vendaConsultada.getQuantidadeTotalProdutos());
+		assertTrue(BigDecimal.ZERO.compareTo(vendaConsultada.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada.getStatus());
+		
+		vendaDao.alterar(vendaConsultada);
+		
+		Venda vendaConsultada2 = vendaDao.consultar(venda.getId());
+		assertEquals(0, (int) vendaConsultada2.getQuantidadeTotalProdutos());
+		assertTrue(BigDecimal.ZERO.compareTo(vendaConsultada2.getValorTotal()) == 0);
+		assertEquals(Status.INICIADA, vendaConsultada2.getStatus());
 	} 
 	
 	@Test
-	public void finalizarVenda() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void finalizarVenda() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A10";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
 		vendaDao.finalizarVenda(venda);
 		
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		assertEquals(venda.getCodigo(), vendaConsultada.getCodigo());
 		assertEquals(Status.CONCLUIDA, vendaConsultada.getStatus());
 	}
 	
 	@Test(expected = UnsupportedOperationException.class)
-	public void tentarAdicionarProdutosVendaFinalizada() throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	public void tentarAdicionarProdutosVendaFinalizada() throws TipoChaveNaoEncontradaException, DAOException {
 		String codigoVenda = "A11";
 		Venda venda = criarVenda(codigoVenda);
-		Boolean retorno = vendaDao.cadastrar(venda);
-		assertTrue(retorno);
+		Venda retorno = vendaDao.cadastrar(venda);
+		assertNotNull(retorno);
 		assertNotNull(venda);
 		assertEquals(codigoVenda, venda.getCodigo());
 		
 		vendaDao.finalizarVenda(venda);
-		Venda vendaConsultada = vendaDao.consultar(codigoVenda);
+		Venda vendaConsultada = vendaDao.consultar(venda.getId());
 		assertEquals(venda.getCodigo(), vendaConsultada.getCodigo());
 		assertEquals(Status.CONCLUIDA, vendaConsultada.getStatus());
 		
@@ -284,15 +310,13 @@ public class VendaDAOTest {
 		
 	}
 
-	private Produto cadastrarProduto(String codigo, BigDecimal valor) throws TipoChaveNaoEncontradaException, MaisDeUmRegistroException, TableException, DAOException {
+	private Produto cadastrarProduto(String codigo, BigDecimal valor) throws TipoChaveNaoEncontradaException, DAOException {
 		Produto produto = new Produto();
 		produto.setCodigo(codigo);
 		produto.setDescricao("Produto 1");
 		produto.setNome("Produto 1");
 		produto.setValor(valor);
-		produto.setMarca("Marca Teste");
-		produtoDao.cadastrar(produto);
-		return produto;
+		return produtoDao.cadastrar(produto);
 	}
 
 	private Cliente cadastrarCliente() throws TipoChaveNaoEncontradaException, DAOException {
@@ -304,8 +328,7 @@ public class VendaDAOTest {
 		cliente.setEstado("SP");
 		cliente.setNumero(10);
 		cliente.setTel(1199999999L);
-		clienteDao.cadastrar(cliente);
-		return cliente;
+		return clienteDao.cadastrar(cliente);
 	}
 	
 	private Venda criarVenda(String codigo) {
@@ -319,52 +342,9 @@ public class VendaDAOTest {
 	}
 	
 	private void excluirVendas() throws DAOException {
-		String sqlProd = "DELETE FROM TB_PRODUTO_QUANTIDADE";
-		executeDelete(sqlProd);
-		
-		String sqlV = "DELETE FROM TB_VENDA";
-		executeDelete(sqlV);
-	}
-
-	private void executeDelete(String sql) throws DAOException {
-		Connection connection = null;
-		PreparedStatement stm = null;
-		ResultSet rs = null;
-		try {
-    		connection = getConnection();
-			stm = connection.prepareStatement(sql);
-			stm.executeUpdate();
-		    
-		} catch (SQLException e) {
-			throw new DAOException("ERRO EXLUINDO OBJETO ", e);
-		} finally {
-			closeConnection(connection, stm, rs);
+		Collection<Venda> list = this.vendaDao.buscarTodos();
+		for (Venda venda : list) {
+			this.vendaDao.excluir(venda);
 		}
 	}
-	
-	protected void closeConnection(Connection connection, PreparedStatement stm, ResultSet rs) {
-		try {
-			if (rs != null && !rs.isClosed()) {
-				rs.close();
-			}
-			if (stm != null && !stm.isClosed()) {
-				stm.close();
-			}
-			if (connection != null && !stm.isClosed()) {
-				connection.close();
-			}
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-	}
-	
-	protected Connection getConnection() throws DAOException {
-		try {
-			return ConnectionFactory.getConnection();
-		} catch (SQLException e) {
-			throw new DAOException("ERRO ABRINDO CONEXAO COM BANCO DE DADOS ", e);
-		}
-	}
-
 }
