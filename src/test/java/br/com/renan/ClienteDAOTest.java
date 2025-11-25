@@ -106,7 +106,7 @@ public class ClienteDAOTest {
 		Cliente retorno = clienteDao.cadastrar(cliente);
 		assertNotNull(retorno);
 		
-		retorno.setNome("Rodrigo Pires");
+		retorno.setNome("Renan");
 		clienteDao.alterar(retorno);
 		
 		Cliente clienteAlterado = clienteDao.buscarPorCPF(retorno.getCpf());

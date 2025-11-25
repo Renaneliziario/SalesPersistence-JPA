@@ -75,11 +75,11 @@ public class ProdutoDAOTest {
 	@Test
 	public void alterarProduto() throws DAOException {
 		Produto produto = criarProduto("A4", "Dell");
-		produto.setNome("Rodrigo Pires");
+		produto.setNome("Renan");
 		produtoDao.alterar(produto);
 		Produto produtoBD = this.produtoDao.consultar(produto.getId());
 		assertNotNull(produtoBD);
-		assertEquals("Rodrigo Pires", produtoBD.getNome());
+		assertEquals("Renan", produtoBD.getNome());
 	}
 	
 	@Test

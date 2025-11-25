@@ -30,7 +30,7 @@ public class ClienteServiceTest {
 	public void init() {
 		cliente = new Cliente();
 		cliente.setCpf(12312312312L);
-		cliente.setNome("Rodrigo");
+		cliente.setNome("Renan");
 		cliente.setCidade("São Paulo");
 		cliente.setEnd("End");
 		cliente.setEstado("SP");
@@ -58,8 +58,8 @@ public class ClienteServiceTest {
 	
 	@Test
 	public void alterarCliente() throws DAOException {
-		cliente.setNome("Rodrigo Pires");
+		cliente.setNome("Renan");
 		Cliente retorno = clienteService.alterar(cliente);
-		Assert.assertEquals("Rodrigo Pires", retorno.getNome());
+		Assert.assertEquals("Renan", retorno.getNome());
 	}
 }
