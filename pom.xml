@@ -2,7 +2,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.com.renan</groupId>
-	<artifactId>vendas-jpa</artifactId>
+	<artifactId>SalesPersistence-JPA</artifactId>
+	<name>SalesPersistence-JPA</name>
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
