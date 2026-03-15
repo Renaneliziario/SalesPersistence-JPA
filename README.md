@@ -87,8 +87,39 @@ O `@After` garante que cada teste limpa o banco, tornando a suíte 100% reproduz
 ```bash
 # 1. Suba o PostgreSQL e pgAdmin via Docker Compose
 docker-compose up -d
+```
 
-# Rodar os testes (usa H2 automaticamente — sem configuração externa):
+```yaml
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: renan
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: vendas_online_2
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_ui
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - ./pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+```
+
+```bash
+# 2. Rodar os testes (usa H2 automaticamente — sem configuração externa):
 mvn clean test
 
 # Para rodar com PostgreSQL (produção):

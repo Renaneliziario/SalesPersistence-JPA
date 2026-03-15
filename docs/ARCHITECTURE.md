@@ -127,3 +127,42 @@ PostgreSQL / H2
 - **Adicionar Service para Venda:** O projeto tem `VendaDAO` mas não chegou a ter um `VendaService` completo — a regra de negócio de venda ficou parcialmente na camada de DAO.
 - **Usar Spring Data JPA:** O GenericDAO resolve o problema de duplicação, mas o Spring Data JPA resolve o mesmo problema com ainda menos código e mais recursos (paginação, queries derivadas).
 - **Adicionar um DTO layer:** As entidades de domínio são expostas diretamente nos testes. Em um sistema real, DTOs separariam o contrato de API do modelo interno.
+
+---
+
+## Infraestrutura Local (Docker)
+
+O Docker foi utilizado exclusivamente para orquestrar a infraestrutura via `docker-compose` — PostgreSQL e pgAdmin — sem containerizar a aplicação Java em si.
+
+```bash
+docker-compose up -d
+```
+
+```yaml
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: renan
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: vendas_online_2
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_ui
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - ./pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+```
